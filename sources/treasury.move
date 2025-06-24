@@ -19,7 +19,6 @@ public struct Treasury<phantom Currency> has key, store {
 // A TreasuryAdminCap is a capability to add/remove authorities to a Treasury.
 public struct TreasuryAdminCap<phantom Currency> has key, store {
     id: UID,
-    treasury_id: ID,
 }
 
 //=== Events ===
@@ -51,12 +50,25 @@ public fun new<Currency>(
 
     let treasury_admin_cap = TreasuryAdminCap<Currency> {
         id: object::new(ctx),
-        treasury_id: treasury_id,
     };
 
     emit(TreasuryCreatedEvent<Currency> { treasury_id: treasury_id });
 
     (treasury, treasury_admin_cap)
+}
+
+// Destroy the Treasury and return the TreasuryCap.
+public fun destroy<Currency>(
+    self: Treasury<Currency>,
+    cap: TreasuryAdminCap<Currency>,
+): TreasuryCap<Currency> {
+    let Treasury { id, treasury_cap, .. } = self;
+    id.delete();
+
+    let TreasuryAdminCap { id } = cap;
+    id.delete();
+
+    treasury_cap
 }
 
 public fun burn_coin<Currency, Authority: drop>(

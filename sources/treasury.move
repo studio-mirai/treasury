@@ -65,15 +65,13 @@ public fun new<Currency>(
         treasury_cap,
     };
 
-    let treasury_id = object::id(&treasury);
-
     let treasury_admin_cap = TreasuryAdminCap<Currency> {
         id: object::new(ctx),
     };
 
     emit(TreasuryCreatedEvent {
         currency: type_name::get<Currency>(),
-        treasury_id,
+        treasury_id: object::id(&treasury),
     });
 
     (treasury, treasury_admin_cap)

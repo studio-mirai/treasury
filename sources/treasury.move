@@ -23,24 +23,33 @@ public struct TreasuryAdminCap<phantom Currency> has key, store {
 
 //=== Events ===
 
-public struct AuthorityAddedEvent<phantom Currency> has copy, drop {
+public struct AuthorityAddedEvent has copy, drop {
     authority: TypeName,
+    currency: TypeName,
+    treasury_id: ID,
 }
 
-public struct AuthorityRemovedEvent<phantom Currency> has copy, drop {
+public struct AuthorityRemovedEvent has copy, drop {
     authority: TypeName,
+    currency: TypeName,
+    treasury_id: ID,
 }
 
-public struct SupplyBurnedEvent<phantom Currency> has copy, drop {
+public struct SupplyBurnedEvent has copy, drop {
     authority: TypeName,
+    currency: TypeName,
+    treasury_id: ID,
     value: u64,
 }
 
-public struct SupplyMintedEvent<phantom Currency> has copy, drop {
+public struct SupplyMintedEvent has copy, drop {
     authority: TypeName,
+    currency: TypeName,
+    treasury_id: ID,
     value: u64,
 }
-public struct TreasuryCreatedEvent<phantom Currency> has copy, drop {
+public struct TreasuryCreatedEvent has copy, drop {
+    currency: TypeName,
     treasury_id: ID,
 }
 
@@ -62,7 +71,10 @@ public fun new<Currency>(
         id: object::new(ctx),
     };
 
-    emit(TreasuryCreatedEvent<Currency> { treasury_id: treasury_id });
+    emit(TreasuryCreatedEvent {
+        currency: type_name::get<Currency>(),
+        treasury_id,
+    });
 
     (treasury, treasury_admin_cap)
 }
@@ -94,7 +106,13 @@ public fun burn_coin<Currency, Authority: drop>(
     let value = coin.value();
 
     self.treasury_cap.burn(coin);
-    emit(SupplyBurnedEvent<Currency> { value, authority: authority_type });
+
+    emit(SupplyBurnedEvent {
+        authority: authority_type,
+        currency: type_name::get<Currency>(),
+        treasury_id: object::id(self),
+        value,
+    });
 
     value
 }
@@ -110,7 +128,13 @@ public fun mint_balance<Currency, Authority: drop>(
     role.assert_can_mint();
 
     let balance = self.treasury_cap.mint_balance(value);
-    emit(SupplyMintedEvent<Currency> { value, authority: authority_type });
+
+    emit(SupplyMintedEvent {
+        authority: authority_type,
+        currency: type_name::get<Currency>(),
+        treasury_id: object::id(self),
+        value,
+    });
 
     balance
 }
@@ -127,7 +151,13 @@ public fun mint_coin<Currency, Authority: drop>(
     role.assert_can_mint();
 
     let coin = self.treasury_cap.mint(value, ctx);
-    emit(SupplyMintedEvent<Currency> { value, authority: authority_type });
+
+    emit(SupplyMintedEvent {
+        authority: authority_type,
+        currency: type_name::get<Currency>(),
+        treasury_id: object::id(self),
+        value,
+    });
 
     coin
 }
@@ -140,7 +170,11 @@ public fun add_authority<Currency, Authority: drop>(
     let authority_type = type_name::get<Authority>();
     self.authorities.insert(authority_type, role);
 
-    emit(AuthorityAddedEvent<Currency> { authority: authority_type });
+    emit(AuthorityAddedEvent {
+        authority: authority_type,
+        currency: type_name::get<Currency>(),
+        treasury_id: object::id(self),
+    });
 }
 
 public fun remove_authority<Currency, Authority: drop>(
@@ -150,7 +184,11 @@ public fun remove_authority<Currency, Authority: drop>(
     let authority_type = type_name::get<Authority>();
     self.authorities.remove(&authority_type);
 
-    emit(AuthorityRemovedEvent<Currency> { authority: authority_type });
+    emit(AuthorityRemovedEvent {
+        authority: authority_type,
+        currency: type_name::get<Currency>(),
+        treasury_id: object::id(self),
+    });
 }
 
 //=== View Functions ===

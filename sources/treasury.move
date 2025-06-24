@@ -93,7 +93,7 @@ public fun destroy<Currency>(
     treasury_cap
 }
 
-public fun burn_coin<Currency, Authority: drop>(
+public fun burn<Currency, Authority: drop>(
     self: &mut Treasury<Currency>,
     _: Authority,
     coin: Coin<Currency>,
@@ -117,29 +117,7 @@ public fun burn_coin<Currency, Authority: drop>(
     value
 }
 
-public fun mint_balance<Currency, Authority: drop>(
-    self: &mut Treasury<Currency>,
-    _: Authority,
-    value: u64,
-): Balance<Currency> {
-    let authority_type = type_name::get<Authority>();
-
-    let role = self.authorities.get(&authority_type);
-    role.assert_can_mint();
-
-    let balance = self.treasury_cap.mint_balance(value);
-
-    emit(SupplyMintedEvent {
-        authority: authority_type,
-        currency: type_name::get<Currency>(),
-        treasury_id: object::id(self),
-        value,
-    });
-
-    balance
-}
-
-public fun mint_coin<Currency, Authority: drop>(
+public fun mint<Currency, Authority: drop>(
     self: &mut Treasury<Currency>,
     _: Authority,
     value: u64,

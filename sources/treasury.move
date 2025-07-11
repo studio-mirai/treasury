@@ -1,14 +1,13 @@
 module treasury::treasury;
 
 use std::type_name::{Self, TypeName};
-use sui::balance::Balance;
-use sui::coin::{Self, Coin, TreasuryCap};
+use sui::coin::{Coin, TreasuryCap};
 use sui::event::emit;
 use sui::vec_map::{Self, VecMap};
 use sui::vec_set::{Self, VecSet};
 use treasury::burn_facility::{Self, BurnFacility};
+use treasury::mint_option::{Self, MintOption};
 use treasury::role::Role;
-use treasury::warrant::{Self, Warrant};
 
 //=== Structs ===
 
@@ -116,19 +115,19 @@ public fun remove_authority<Currency, Authority: drop>(
     });
 }
 
-// Create a new warrant with the provided mintable value.
-public fun new_warrant<Currency, Authority: drop>(
+// Create a new mint_option with the provided mintable value.
+public fun new_mint_option<Currency, Authority: drop>(
     self: &Treasury<Currency>,
     _: Authority,
     value: u64,
     ctx: &mut TxContext,
-): Warrant<Currency> {
+): MintOption<Currency> {
     let authority_type = type_name::get<Authority>();
 
     let role = self.authorities.get(&authority_type);
     role.assert_can_mint();
 
-    warrant::new<Currency>(value, ctx)
+    mint_option::new<Currency>(value, ctx)
 }
 
 public fun mint<Currency, Authority: drop>(
@@ -147,20 +146,20 @@ public fun mint<Currency, Authority: drop>(
     coin
 }
 
-public fun mint_with_warrant<Currency>(
+public fun mint_with_mint_option<Currency>(
     self: &mut Treasury<Currency>,
-    warrant: Warrant<Currency>,
+    mint_option: MintOption<Currency>,
     ctx: &mut TxContext,
 ): Coin<Currency> {
-    let coin = self.treasury_cap.mint(warrant.value(), ctx);
+    let coin = self.treasury_cap.mint(mint_option.value(), ctx);
 
     emit(SupplyMintedEvent {
         currency: type_name::get<Currency>(),
         treasury_id: object::id(self),
-        value: warrant.value(),
+        value: mint_option.value(),
     });
 
-    warrant.destroy();
+    mint_option.destroy();
 
     coin
 }
